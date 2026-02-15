@@ -11,12 +11,15 @@ data:
     }
 
     http {
+        # Keepalive connections to upstreams for better performance
         upstream frontend {
-            server frontend-service:80;
+            server frontend-service:80 max_fails=3 fail_timeout=30s;
+            keepalive 32;
         }
 
         upstream backend {
-            server backend-service:8000;
+            server backend-service:8000 max_fails=3 fail_timeout=30s;
+            keepalive 32;
         }
 
         server {
@@ -37,9 +40,14 @@ data:
                 proxy_set_header X-Real-IP $remote_addr;
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
                 proxy_set_header X-Forwarded-Proto $scheme;
+                proxy_http_version 1.1;
+                proxy_set_header Connection "";
                 proxy_connect_timeout 60s;
                 proxy_send_timeout 60s;
                 proxy_read_timeout 60s;
+                proxy_next_upstream error timeout invalid_header http_500 http_502 http_503;
+                proxy_next_upstream_timeout 10s;
+                proxy_next_upstream_tries 2;
             }
 
             # Backend API routes
@@ -49,9 +57,14 @@ data:
                 proxy_set_header X-Real-IP $remote_addr;
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
                 proxy_set_header X-Forwarded-Proto $scheme;
+                proxy_http_version 1.1;
+                proxy_set_header Connection "";
                 proxy_connect_timeout 180s;
                 proxy_send_timeout 180s;
                 proxy_read_timeout 180s;
+                proxy_next_upstream error timeout invalid_header http_500 http_502 http_503;
+                proxy_next_upstream_timeout 10s;
+                proxy_next_upstream_tries 2;
             }
 
             # Backend health check
@@ -61,9 +74,14 @@ data:
                 proxy_set_header X-Real-IP $remote_addr;
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
                 proxy_set_header X-Forwarded-Proto $scheme;
+                proxy_http_version 1.1;
+                proxy_set_header Connection "";
                 proxy_connect_timeout 10s;
                 proxy_send_timeout 10s;
                 proxy_read_timeout 10s;
+                proxy_next_upstream error timeout invalid_header http_500 http_502 http_503;
+                proxy_next_upstream_timeout 5s;
+                proxy_next_upstream_tries 2;
             }
 
             # Backend ingest endpoint
@@ -73,9 +91,14 @@ data:
                 proxy_set_header X-Real-IP $remote_addr;
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
                 proxy_set_header X-Forwarded-Proto $scheme;
+                proxy_http_version 1.1;
+                proxy_set_header Connection "";
                 proxy_connect_timeout 300s;
                 proxy_send_timeout 300s;
                 proxy_read_timeout 300s;
+                proxy_next_upstream error timeout invalid_header http_500 http_502 http_503;
+                proxy_next_upstream_timeout 10s;
+                proxy_next_upstream_tries 2;
             }
 
             # Backend chat endpoint
@@ -85,9 +108,14 @@ data:
                 proxy_set_header X-Real-IP $remote_addr;
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
                 proxy_set_header X-Forwarded-Proto $scheme;
+                proxy_http_version 1.1;
+                proxy_set_header Connection "";
                 proxy_connect_timeout 180s;
                 proxy_send_timeout 180s;
                 proxy_read_timeout 180s;
+                proxy_next_upstream error timeout invalid_header http_500 http_502 http_503;
+                proxy_next_upstream_timeout 10s;
+                proxy_next_upstream_tries 2;
             }
         }
     }
