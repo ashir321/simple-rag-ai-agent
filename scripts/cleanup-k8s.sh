@@ -11,7 +11,7 @@ fi
 
 # Delete all resources in namespace
 echo "Deleting all resources..."
-kubectl delete -f k8s/ingress.yaml --ignore-not-found=true
+kubectl delete -f k8s/nginx-proxy.yaml --ignore-not-found=true
 kubectl delete -f k8s/frontend-deployment.yaml --ignore-not-found=true
 kubectl delete -f k8s/backend-deployment.yaml --ignore-not-found=true
 kubectl delete -f k8s/pvc.yaml --ignore-not-found=true
