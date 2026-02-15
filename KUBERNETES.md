@@ -247,6 +247,22 @@ kubectl get pvc -n rag-ai-agent
 kubectl describe pvc backend-data-pvc -n rag-ai-agent
 ```
 
+### Nginx 504 Gateway Timeout errors
+
+If you experience 504 Gateway Timeout errors, see the [Nginx Timeout Fix Guide](docs/NGINX_TIMEOUT_FIX.md) for detailed troubleshooting steps.
+
+Quick check:
+```bash
+# Check nginx proxy logs
+kubectl logs -n rag-ai-agent deployment/nginx-proxy
+
+# Verify nginx configuration
+kubectl exec -n rag-ai-agent deployment/nginx-proxy -- nginx -t
+
+# Restart nginx if needed
+kubectl rollout restart deployment/nginx-proxy -n rag-ai-agent
+```
+
 ## Cleanup
 
 To remove all resources:
