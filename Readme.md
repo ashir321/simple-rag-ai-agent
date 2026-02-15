@@ -183,6 +183,50 @@ If you hit rate limits or token limits, consider:
 
 MIT – free to use, modify, and ship.
 
+---
+
+## Kubernetes Deployment
+
+This project is now **Kubernetes-ready**! 🚀
+
+### Quick K8s Deployment
+
+```bash
+# 1. Build Docker images
+./scripts/build-images.sh
+
+# 2. Configure your OpenAI API key in k8s/secrets.yaml
+
+# 3. Deploy to Kubernetes
+./scripts/deploy-k8s.sh
+
+# 4. Access the application
+kubectl port-forward -n rag-ai-agent svc/frontend-service 8080:80
+```
+
+### Docker Compose (Local Testing)
+
+```bash
+# Set your OpenAI API key
+export OPENAI_API_KEY=your-key-here
+
+# Run with Docker Compose
+docker-compose up --build
+```
+
+### Documentation
+
+For complete Kubernetes deployment guide, see [KUBERNETES.md](KUBERNETES.md)
+
+Includes:
+- Complete deployment instructions
+- Cloud provider setup (GKE, EKS, AKS)
+- Scaling and monitoring
+- Troubleshooting
+- Production best practices
+
+---
+
 ## Credits
 
 Built as a clean educational RAG reference project.

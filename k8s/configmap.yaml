@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  namespace: rag-ai-agent
+data:
+  ALLOWED_ORIGINS: "http://localhost,http://localhost:80,http://frontend-service"

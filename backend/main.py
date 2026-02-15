@@ -10,13 +10,13 @@ from rag.rag_answer import retrieve, generate_answer
 
 app = FastAPI()
 
-# Enable CORS for local frontend during development
+# Get allowed origins from environment variable or use defaults
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173").split(",")
+
+# Enable CORS for frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-    ],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -32,6 +32,16 @@ chunks = None
 
 class ChatIn(BaseModel):
     message: str
+
+@app.get("/health")
+def health():
+    """Health check endpoint for Kubernetes probes"""
+    return {"status": "healthy"}
+
+@app.get("/")
+def root():
+    """Root endpoint"""
+    return {"message": "RAG AI Agent API", "version": "1.0.0"}
 
 @app.post("/ingest")
 def ingest():
