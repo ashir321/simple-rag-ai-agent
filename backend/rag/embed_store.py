@@ -1,17 +1,20 @@
 import json
 import numpy as np
 import faiss
-from openai import OpenAI
+from openai import OpenAI, OpenAIError
 
 client = OpenAI()
 EMBED_MODEL = "text-embedding-3-small"
 
 def embed_texts(texts):
-    resp = client.embeddings.create(model=EMBED_MODEL, input=texts)
-    vectors = [d.embedding for d in resp.data]
-    arr = np.array(vectors, dtype="float32")
-    faiss.normalize_L2(arr)
-    return arr
+    try:
+        resp = client.embeddings.create(model=EMBED_MODEL, input=texts)
+        vectors = [d.embedding for d in resp.data]
+        arr = np.array(vectors, dtype="float32")
+        faiss.normalize_L2(arr)
+        return arr
+    except OpenAIError as e:
+        raise OpenAIError(f"Failed to generate embeddings: {str(e)}")
 
 def build_and_save_index(chunks, index_path, meta_path):
     vectors = embed_texts(chunks)

@@ -20,10 +20,35 @@ export default function ChatWidget() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: msg }),
       });
+
+      if (!res.ok) {
+        // Handle HTTP error responses
+        let errorMessage = "Sorry, I encountered an error. Please try again.";
+        try {
+          const errorData = await res.json();
+          if (errorData.detail) {
+            errorMessage = `Error: ${errorData.detail}`;
+          }
+        } catch (e) {
+          // If response is not JSON, use status text
+          errorMessage = `Server error (${res.status}): ${res.statusText}`;
+        }
+        setMsgs((m) => [...m, { role: "bot", text: errorMessage }]);
+        return;
+      }
+
       const data = await res.json();
-      setMsgs((m) => [...m, { role: "bot", text: data.answer }]);
+      if (data.answer) {
+        setMsgs((m) => [...m, { role: "bot", text: data.answer }]);
+      } else {
+        setMsgs((m) => [...m, { role: "bot", text: "Sorry, I didn't receive a valid response." }]);
+      }
     } catch (err) {
-      setMsgs((m) => [...m, { role: "bot", text: "Error contacting server." }]);
+      // Network errors or other exceptions
+      setMsgs((m) => [...m, { 
+        role: "bot", 
+        text: "Unable to contact the server. Please check your connection and try again." 
+      }]);
     }
   }
 
