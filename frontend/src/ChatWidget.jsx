@@ -1,5 +1,8 @@
 import React, { useState } from "react";
 
+// Get backend URL from environment variable or use default
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+
 export default function ChatWidget() {
   const [msgs, setMsgs] = useState([{ role: "bot", text: "Hi! Ask me about your policy." }]);
   const [text, setText] = useState("");
@@ -12,7 +15,7 @@ export default function ChatWidget() {
     setText("");
 
     try {
-      const res = await fetch("http://localhost:8000/chat", {
+      const res = await fetch(`${BACKEND_URL}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: msg }),

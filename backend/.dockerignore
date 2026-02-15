@@ -1,0 +1,14 @@
+.venv
+venv
+__pycache__
+*.pyc
+.env
+.env.*
+.DS_Store
+.idea
+.vscode
+*.log
+*.faiss
+*.json
+data/index.faiss
+data/chunks.json

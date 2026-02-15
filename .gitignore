@@ -5,6 +5,7 @@ __pycache__/
 *.pyc
 .env
 .env.*
+!.env.example
 .DS_Store
 .idea/
 .vscode/
@@ -14,3 +15,12 @@ dist/
 build/
 .venv
 venv/
+
+# Docker
+*.faiss
+*.json
+data/index.faiss
+data/chunks.json
+
+# Kubernetes secrets (keep template)
+# k8s/secrets.yaml should be configured locally, not committed with real keys
