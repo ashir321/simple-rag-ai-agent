@@ -13,7 +13,7 @@ def embed_query(query: str):
         faiss.normalize_L2(vec)
         return vec
     except OpenAIError as e:
-        raise OpenAIError(f"Failed to generate embedding: {str(e)}")
+        raise OpenAIError(f"Failed to generate embedding: {str(e)}") from e
 
 def retrieve(query, index, chunks, k=4):
     qvec = embed_query(query)
@@ -47,4 +47,4 @@ def generate_answer(user_question, retrieved_chunks):
         )
         return response.choices[0].message.content
     except OpenAIError as e:
-        raise OpenAIError(f"Failed to generate answer: {str(e)}")
+        raise OpenAIError(f"Failed to generate answer: {str(e)}") from e

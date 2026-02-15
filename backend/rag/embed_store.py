@@ -14,7 +14,7 @@ def embed_texts(texts):
         faiss.normalize_L2(arr)
         return arr
     except OpenAIError as e:
-        raise OpenAIError(f"Failed to generate embeddings: {str(e)}")
+        raise OpenAIError(f"Failed to generate embeddings: {str(e)}") from e
 
 def build_and_save_index(chunks, index_path, meta_path):
     vectors = embed_texts(chunks)
