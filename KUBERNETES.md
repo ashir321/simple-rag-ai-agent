@@ -17,7 +17,7 @@ This guide will help you deploy the RAG AI Agent to a Kubernetes cluster.
 ./scripts/build-images.sh
 ```
 
-This will build both the backend and frontend Docker images.
+This will build both the backend and frontend Docker images. The frontend image is built with an empty `VITE_BACKEND_URL` so it uses relative URLs, allowing the nginx proxy to route traffic correctly in Kubernetes.
 
 ### 2. Configure Secrets
 
@@ -233,12 +233,36 @@ kubectl logs -n rag-ai-agent <pod-name>
 
 ### Frontend can't connect to backend
 
-1. Verify backend service is running:
+If you see the error "Unable to contact the server. Please check your connection and try again.", see the detailed [K8S Connection Troubleshooting Guide](docs/K8S_CONNECTION_TROUBLESHOOTING.md).
+
+Quick checks:
+
+1. **Verify backend service is running:**
    ```bash
    kubectl get svc backend-service -n rag-ai-agent
+   kubectl get pods -n rag-ai-agent -l app=backend
    ```
-2. Check CORS configuration in backend ConfigMap
-3. Ensure frontend is built with correct backend URL
+
+2. **Check nginx proxy is routing correctly:**
+   ```bash
+   # Check nginx proxy logs
+   kubectl logs -n rag-ai-agent deployment/nginx-proxy
+   
+   # Test backend health through nginx proxy
+   kubectl port-forward -n rag-ai-agent svc/nginx-proxy-service 8080:80
+   # In another terminal:
+   curl http://localhost:8080/health
+   ```
+
+3. **Ensure frontend image was built with empty VITE_BACKEND_URL:**
+   - The frontend must be built with `--build-arg VITE_BACKEND_URL=""` to use relative URLs
+   - This is automatically done by `./scripts/build-images.sh`
+   - If you built the image manually, rebuild it with the correct build arg
+
+4. **Check CORS configuration in backend ConfigMap:**
+   ```bash
+   kubectl get configmap backend-config -n rag-ai-agent -o yaml
+   ```
 
 ### Persistent volume issues
 
