@@ -7,4 +7,4 @@ data:
   # IMPORTANT: Update this with your actual external domain(s) after deployment
   # Example: "https://your-domain.com,https://www.your-domain.com"
   # For local testing: "http://localhost,http://localhost:80"
-  ALLOWED_ORIGINS: "http://localhost,http://localhost:80,http://rag.ashir.local/"
+  ALLOWED_ORIGINS: "http://localhost,http://localhost:80,http://rag.ashir.local,http://rag.ashir.local:8083,http://192.168.1.20,http://192.168.1.20:8083"
