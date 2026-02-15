@@ -27,15 +27,17 @@ Added connection pooling to maintain persistent connections to upstream services
 
 ```nginx
 upstream frontend {
-    server frontend-service:80;
+    server frontend-service:80 max_fails=3 fail_timeout=30s;
     keepalive 32;  # Maintain 32 idle keepalive connections
 }
 
 upstream backend {
-    server backend-service:8000;
+    server backend-service:8000 max_fails=3 fail_timeout=30s;
     keepalive 32;
 }
 ```
+
+The `max_fails=3` and `fail_timeout=30s` parameters ensure that if an upstream server fails 3 times, it will be marked as unavailable for 30 seconds before retry attempts resume.
 
 ### 2. HTTP/1.1 with Keepalive
 
@@ -48,12 +50,15 @@ proxy_set_header Connection "";  # Clear Connection header for keepalive
 
 ### 3. Automatic Failover
 
-Added retry logic for transient errors:
+Added retry logic for transient errors with controlled retry attempts:
 
 ```nginx
-proxy_next_upstream error timeout invalid_header http_500 http_502 http_503 http_504;
+proxy_next_upstream error timeout invalid_header http_500 http_502 http_503;
 proxy_next_upstream_timeout 10s;
+proxy_next_upstream_tries 2;
 ```
+
+This configuration tells nginx to retry the request if it encounters network errors, timeouts, or 500/502/503 errors from the upstream. The retry is limited to 2 attempts within a 10-second window to prevent infinite retry loops.
 
 ## Deployment
 
