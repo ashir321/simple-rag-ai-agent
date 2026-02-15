@@ -39,7 +39,7 @@ stringData:
 This will:
 - Create the `rag-ai-agent` namespace
 - Deploy all necessary resources (secrets, configmaps, pvcs, deployments, services)
-- Set up ingress (optional)
+- Set up nginx proxy loadbalancer for external access
 
 ### 4. Check Deployment Status
 
@@ -51,14 +51,20 @@ Wait until all pods are in `Running` state.
 
 ### 5. Access the Application
 
-#### Option A: Using LoadBalancer (Cloud providers)
+#### Option A: Using Nginx Proxy LoadBalancer (Recommended)
 
 Get the external IP:
 ```bash
-kubectl get svc frontend-service -n rag-ai-agent
+kubectl get svc nginx-proxy-service -n rag-ai-agent
 ```
 
 Access the app at `http://<EXTERNAL-IP>`
+
+The nginx proxy will route:
+- `/` → Frontend
+- `/api` → Backend API
+- `/health` → Backend health check
+- `/ingest` → Backend ingest endpoint
 
 #### Option B: Using Port Forward (Local development)
 
@@ -74,13 +80,11 @@ kubectl port-forward -n rag-ai-agent svc/backend-service 8000:8000
 ```
 Access at: http://localhost:8000
 
-#### Option C: Using Ingress
-
-If you have an Ingress controller installed:
-
-1. Update `k8s/ingress.yaml` with your domain
-2. Apply the ingress: `kubectl apply -f k8s/ingress.yaml`
-3. Access at: `http://your-domain.com`
+Nginx Proxy (to test locally):
+```bash
+kubectl port-forward -n rag-ai-agent svc/nginx-proxy-service 8080:80
+```
+Access at: http://localhost:8080
 
 ### 6. Initialize the Knowledge Base
 
@@ -103,25 +107,32 @@ curl -X POST http://localhost:8000/ingest
 │  ┌─────────────────────────────────────────────────┐   │
 │  │              rag-ai-agent namespace              │   │
 │  │                                                   │   │
-│  │  ┌──────────────┐         ┌──────────────┐     │   │
-│  │  │   Frontend   │         │   Backend    │     │   │
-│  │  │  Deployment  │         │  Deployment  │     │   │
-│  │  │  (Nginx)     │────────▶│  (FastAPI)   │     │   │
-│  │  │  Replicas: 2 │         │  Replicas: 1 │     │   │
-│  │  └──────────────┘         └──────────────┘     │   │
-│  │         │                         │             │   │
-│  │         │                         │             │   │
-│  │  ┌──────▼──────┐         ┌────────▼──────┐    │   │
-│  │  │  Frontend   │         │   Backend     │    │   │
-│  │  │   Service   │         │   Service     │    │   │
-│  │  │ (LoadBalancer)│       │ (ClusterIP)   │    │   │
-│  │  └─────────────┘         └───────────────┘    │   │
-│  │                                  │             │   │
-│  │                          ┌───────▼────────┐   │   │
-│  │                          │ PersistentVolume│   │   │
-│  │                          │   (Data/FAISS)  │   │   │
-│  │                          └─────────────────┘   │   │
-│  └───────────────────────────────────────────────┘   │
+│  │  ┌──────────────┐                                │   │
+│  │  │ Nginx Proxy  │                                │   │
+│  │  │  LoadBalancer│                                │   │
+│  │  │  Replicas: 2 │                                │   │
+│  │  └──────┬───────┘                                │   │
+│  │         │                                         │   │
+│  │         ├─────────────────┬───────────────────┐  │   │
+│  │         │                 │                   │  │   │
+│  │  ┌──────▼──────┐   ┌──────▼──────┐          │  │   │
+│  │  │   Frontend  │   │   Backend   │          │  │   │
+│  │  │  Deployment │   │  Deployment │          │  │   │
+│  │  │  (Nginx)    │   │  (FastAPI)  │          │  │   │
+│  │  │  Replicas:2 │   │  Replicas:1 │          │  │   │
+│  │  └──────┬──────┘   └──────┬──────┘          │  │   │
+│  │         │                 │                   │  │   │
+│  │  ┌──────▼──────┐   ┌──────▼──────┐          │  │   │
+│  │  │  Frontend   │   │   Backend   │          │  │   │
+│  │  │   Service   │   │   Service   │          │  │   │
+│  │  │ (ClusterIP) │   │ (ClusterIP) │          │  │   │
+│  │  └─────────────┘   └──────┬──────┘          │  │   │
+│  │                            │                   │  │   │
+│  │                    ┌───────▼────────┐         │  │   │
+│  │                    │ PersistentVolume│         │  │   │
+│  │                    │   (Data/FAISS)  │         │  │   │
+│  │                    └─────────────────┘         │  │   │
+│  └─────────────────────────────────────────────────┘   │
 └───────────────────────────────────────────────────────┘
 ```
 
@@ -267,9 +278,6 @@ kubectl delete namespace rag-ai-agent
 # Start minikube
 minikube start
 
-# Enable ingress addon (optional)
-minikube addons enable ingress
-
 # Build images directly in minikube
 eval $(minikube docker-env)
 ./scripts/build-images.sh
@@ -278,7 +286,7 @@ eval $(minikube docker-env)
 ./scripts/deploy-k8s.sh
 
 # Get the service URL
-minikube service frontend-service -n rag-ai-agent
+minikube service nginx-proxy-service -n rag-ai-agent
 ```
 
 ## Using with Kind (Kubernetes in Docker)
@@ -295,7 +303,7 @@ kind load docker-image rag-ai-agent-frontend:latest --name rag-ai-agent
 ./scripts/deploy-k8s.sh
 
 # Port forward to access
-kubectl port-forward -n rag-ai-agent svc/frontend-service 8080:80
+kubectl port-forward -n rag-ai-agent svc/nginx-proxy-service 8080:80
 ```
 
 ## Cloud Provider Specific Notes

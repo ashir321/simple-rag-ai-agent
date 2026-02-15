@@ -26,8 +26,8 @@ kubectl apply -f k8s/backend-deployment.yaml
 echo "Deploying frontend..."
 kubectl apply -f k8s/frontend-deployment.yaml
 
-echo "Creating ingress (optional)..."
-kubectl apply -f k8s/ingress.yaml || echo "Ingress creation skipped (may not be supported)"
+echo "Deploying nginx proxy loadbalancer..."
+kubectl apply -f k8s/nginx-proxy.yaml
 
 echo ""
 echo "Deployment complete!"
@@ -35,5 +35,5 @@ echo ""
 echo "To check the status of your deployment, run:"
 echo "  kubectl get all -n rag-ai-agent"
 echo ""
-echo "To get the frontend service URL, run:"
-echo "  kubectl get svc frontend-service -n rag-ai-agent"
+echo "To get the nginx proxy loadbalancer URL, run:"
+echo "  kubectl get svc nginx-proxy-service -n rag-ai-agent"

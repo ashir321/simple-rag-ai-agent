@@ -1,3 +1,11 @@
+# DEPRECATED: This file is no longer used in the default deployment.
+# The project now uses nginx-proxy.yaml for load balancing and routing.
+# This file is kept for reference and backward compatibility.
+# To use the nginx proxy loadbalancer (recommended), deploy nginx-proxy.yaml instead.
+#
+# If you still want to use Kubernetes Ingress, you can manually apply this file:
+# kubectl apply -f k8s/ingress.yaml
+#
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:

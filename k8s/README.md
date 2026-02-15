@@ -21,15 +21,18 @@ This directory contains all Kubernetes manifests for deploying the RAG AI Agent.
   
 - **`frontend-deployment.yaml`** - React frontend deployment and service
   - Deployment with 2 replicas
-  - LoadBalancer service on port 80
+  - ClusterIP service on port 80
   - Health checks configured
   - Resource limits: 128Mi-256Mi memory, 100m-200m CPU
 
-### Optional Resources
+### Proxy and Load Balancing
 
-- **`ingress.yaml`** - Ingress configuration for external access
-  - Routes traffic to frontend and backend
-  - Supports SSL/TLS with cert-manager (commented out)
+- **`nginx-proxy.yaml`** - Nginx reverse proxy with LoadBalancer service
+  - Deployment with 2 replicas
+  - LoadBalancer service on port 80
+  - Routes traffic to frontend and backend services
+  - Health checks configured
+  - Resource limits: 64Mi-128Mi memory, 50m-100m CPU
 
 ## Deployment Order
 
@@ -39,7 +42,7 @@ The manifests should be applied in this order:
 2. Secrets and ConfigMaps
 3. Persistent Volume Claims
 4. Deployments and Services
-5. Ingress (optional)
+5. Nginx Proxy LoadBalancer
 
 The deployment script `scripts/deploy-k8s.sh` handles this automatically.
 
@@ -67,15 +70,9 @@ data:
   ALLOWED_ORIGINS: "https://your-domain.com,https://www.your-domain.com"
 ```
 
-#### 3. Update Ingress (Optional)
+#### 3. Update Nginx Proxy (Optional)
 
-If using Ingress, edit `ingress.yaml`:
-
-```yaml
-spec:
-  rules:
-  - host: your-domain.com  # Change this
-```
+If you want to add custom domain or SSL/TLS configuration, edit `nginx-proxy.yaml` and update the nginx configuration in the ConfigMap.
 
 ### Resource Customization
 
@@ -114,34 +111,43 @@ resources:
 
 ## Service Types
 
-### Backend Service (ClusterIP)
+### Frontend Service (ClusterIP)
 
-The backend uses ClusterIP, making it only accessible within the cluster:
+The frontend uses ClusterIP, making it only accessible within the cluster:
 
 ```yaml
 spec:
   type: ClusterIP
 ```
 
-To access it externally during development:
+External access is handled by the nginx proxy LoadBalancer.
+
+To access it directly during development:
 ```bash
-kubectl port-forward -n rag-ai-agent svc/backend-service 8000:8000
+kubectl port-forward -n rag-ai-agent svc/frontend-service 3000:80
 ```
 
-### Frontend Service (LoadBalancer)
+### Nginx Proxy Service (LoadBalancer)
 
-The frontend uses LoadBalancer to get an external IP:
+The nginx proxy uses LoadBalancer to get an external IP and route traffic:
 
 ```yaml
 spec:
   type: LoadBalancer
 ```
 
-Alternatives:
-- **NodePort** - For on-premise or testing
-- **ClusterIP** - If using Ingress only
+This service acts as the single entry point for external traffic, routing requests to the appropriate backend services.
 
-Change in `frontend-deployment.yaml` if needed.
+Get the external IP:
+```bash
+kubectl get svc nginx-proxy-service -n rag-ai-agent
+```
+
+Alternatives:
+- **NodePort** - For on-premise or testing environments
+- **ClusterIP with Ingress** - If you prefer using an Ingress controller
+
+Change in `nginx-proxy.yaml` if needed.
 
 ## Environment Variables
 
@@ -196,6 +202,57 @@ readinessProbe:
 
 Adjust these values based on your application's startup time and requirements.
 
+## Nginx Proxy Configuration
+
+The nginx proxy acts as a reverse proxy and load balancer, routing traffic to the appropriate services:
+
+### Routing Rules
+
+- **`/`** → Frontend service (React app)
+- **`/api`** → Backend service (FastAPI)
+- **`/health`** → Backend health check endpoint
+- **`/ingest`** → Backend ingest endpoint
+
+### Customization
+
+To modify the nginx configuration, edit the ConfigMap in `nginx-proxy.yaml`:
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-proxy-config
+  namespace: rag-ai-agent
+data:
+  nginx.conf: |
+    # Your custom nginx configuration
+```
+
+After updating, restart the nginx proxy pods:
+```bash
+kubectl rollout restart deployment/nginx-proxy -n rag-ai-agent
+```
+
+### SSL/TLS Configuration
+
+To add SSL/TLS support, you can:
+
+1. Use a LoadBalancer with SSL termination (cloud provider specific)
+2. Configure nginx with SSL certificates:
+   - Add certificates as a Secret
+   - Mount the Secret in the nginx pod
+   - Update nginx.conf to listen on port 443 with SSL
+
+Example SSL configuration in nginx.conf:
+```conf
+server {
+    listen 443 ssl;
+    ssl_certificate /etc/nginx/certs/tls.crt;
+    ssl_certificate_key /etc/nginx/certs/tls.key;
+    # ... rest of configuration
+}
+```
+
 ## Persistent Storage
 
 The backend uses a PersistentVolumeClaim to store:
@@ -236,42 +293,6 @@ For multi-node deployments with multiple backend replicas, consider:
 - Network storage (NFS, EFS, etc.)
 - Caching layer (Redis)
 
-## Ingress Configuration
-
-### Prerequisites
-
-Requires an Ingress controller (e.g., nginx-ingress, traefik):
-
-```bash
-# For minikube
-minikube addons enable ingress
-
-# For other clusters, install nginx-ingress
-kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.1/deploy/static/provider/cloud/deploy.yaml
-```
-
-### Path Routing
-
-The Ingress routes requests to different services:
-
-- `/` → Frontend service
-- `/api` → Backend service
-
-Update your frontend to use `/api` prefix when deployed with Ingress.
-
-### SSL/TLS
-
-To enable HTTPS:
-
-1. Install cert-manager:
-```bash
-kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.0/cert-manager.yaml
-```
-
-2. Create a ClusterIssuer for Let's Encrypt
-
-3. Uncomment the TLS sections in `ingress.yaml`
-
 ## Scaling
 
 ### Manual Scaling
@@ -282,6 +303,9 @@ kubectl scale deployment backend -n rag-ai-agent --replicas=3
 
 # Scale frontend
 kubectl scale deployment frontend -n rag-ai-agent --replicas=5
+
+# Scale nginx proxy
+kubectl scale deployment nginx-proxy -n rag-ai-agent --replicas=3
 ```
 
 ### Auto-scaling
@@ -477,7 +501,7 @@ kubectl delete namespace rag-ai-agent
 ### Remove Specific Resources
 
 ```bash
-kubectl delete -f k8s/ingress.yaml
+kubectl delete -f k8s/nginx-proxy.yaml
 kubectl delete deployment backend -n rag-ai-agent
 ```
 
