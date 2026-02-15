@@ -215,12 +215,7 @@ For production, consider switching to managed vector databases like Pinecone, We
 
 ---
 
-## Common Issues
-
-**"Unable to contact the server" Error**
-If you see this error when using Docker Compose:
-* This has been fixed! Make sure you're using the latest version with the nginx proxy configuration.
-* See [DOCKER_FIX.md](DOCKER_FIX.md) for details and troubleshooting.
+## Common Issue
 
 **OpenAI Limit**
 If you hit rate limits or token limits, consider:

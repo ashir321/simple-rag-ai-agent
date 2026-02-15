@@ -10,7 +10,7 @@ services:
       - "8000:8000"
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - ALLOWED_ORIGINS=http://localhost,http://localhost:80,http://frontend,http://frontend:80
+      - ALLOWED_ORIGINS=http://localhost,http://localhost:3000,http://frontend
     volumes:
       - backend-data:/app/data
     networks:
@@ -26,6 +26,8 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        - VITE_BACKEND_URL=http://localhost:8000
     container_name: rag-frontend
     ports:
       - "80:80"
