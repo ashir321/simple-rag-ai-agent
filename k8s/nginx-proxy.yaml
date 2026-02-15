@@ -23,6 +23,13 @@ data:
             listen 80;
             server_name _;
 
+            # Health check endpoint - returns 200 OK without proxying
+            location /nginx-health {
+                access_log off;
+                return 200 "healthy\n";
+                add_header Content-Type text/plain;
+            }
+
             # Frontend routes
             location / {
                 proxy_pass http://frontend;
@@ -97,7 +104,7 @@ spec:
               cpu: "100m"
           livenessProbe:
             httpGet:
-              path: /
+              path: /nginx-health
               port: 80
             initialDelaySeconds: 10
             periodSeconds: 10
@@ -105,7 +112,7 @@ spec:
             failureThreshold: 3
           readinessProbe:
             httpGet:
-              path: /
+              path: /nginx-health
               port: 80
             initialDelaySeconds: 5
             periodSeconds: 5

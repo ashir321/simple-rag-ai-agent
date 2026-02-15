@@ -244,7 +244,7 @@ To add SSL/TLS support, you can:
    - Update nginx.conf to listen on port 443 with SSL
 
 Example SSL configuration in nginx.conf:
-```nginx
+```conf
 server {
     listen 443 ssl;
     ssl_certificate /etc/nginx/certs/tls.crt;
