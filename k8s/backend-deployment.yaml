@@ -6,6 +6,11 @@ metadata:
   labels:
     app: backend
 spec:
+  # NOTE: Backend is limited to 1 replica due to in-memory FAISS index.
+  # To scale beyond 1 replica, consider:
+  # 1. Using ReadWriteMany storage for shared access
+  # 2. Implementing a caching layer (Redis)
+  # 3. Loading index from persistent storage on each replica startup
   replicas: 1
   selector:
     matchLabels:

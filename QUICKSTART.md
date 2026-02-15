@@ -98,7 +98,9 @@ docker push YOUR_REGISTRY/rag-ai-agent-frontend:latest
 
 # 3. Update deployment YAML files with your registry images
 
-# 4. Configure API key (edit k8s/secrets.yaml)
+# 4. Configure API key and CORS
+# Edit k8s/secrets.yaml with your OpenAI API key
+# Edit k8s/configmap.yaml with your actual domain for CORS
 
 # 5. Deploy
 ./scripts/deploy-k8s.sh
@@ -107,10 +109,15 @@ docker push YOUR_REGISTRY/rag-ai-agent-frontend:latest
 kubectl get svc frontend-service -n rag-ai-agent
 # Wait for EXTERNAL-IP to be assigned
 
-# 7. Access via external IP
+# 7. Update CORS with external IP/domain
+# Edit k8s/configmap.yaml: ALLOWED_ORIGINS: "http://YOUR-EXTERNAL-IP"
+kubectl apply -f k8s/configmap.yaml
+kubectl rollout restart deployment/backend -n rag-ai-agent
+
+# 8. Access via external IP
 # Open http://EXTERNAL-IP in browser
 
-# 8. Ingest knowledge base
+# 9. Ingest knowledge base
 curl -X POST http://EXTERNAL-IP:8000/ingest
 ```
 
