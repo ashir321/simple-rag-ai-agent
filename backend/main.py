@@ -1,7 +1,8 @@
 import os
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from openai import OpenAIError
 
 from rag.pdf_to_text import pdf_to_text
 from rag.chunking import chunk_text
@@ -46,22 +47,32 @@ def root():
 @app.post("/ingest")
 def ingest():
     global index, chunks
-    text = pdf_to_text(PDF_PATH)
-    chunks = chunk_text(text)
-    build_and_save_index(chunks, INDEX_PATH, META_PATH)
-    index, chunks = load_index(INDEX_PATH, META_PATH)
-    return {"status": "ok", "chunks": len(chunks)}
+    try:
+        text = pdf_to_text(PDF_PATH)
+        chunks = chunk_text(text)
+        build_and_save_index(chunks, INDEX_PATH, META_PATH)
+        index, chunks = load_index(INDEX_PATH, META_PATH)
+        return {"status": "ok", "chunks": len(chunks)}
+    except OpenAIError as e:
+        raise HTTPException(status_code=500, detail=f"OpenAI API error: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error during ingestion: {str(e)}")
 
 @app.post("/chat")
 def chat(payload: ChatIn):
     global index, chunks
 
-    if index is None or chunks is None:
-        if os.path.exists(INDEX_PATH) and os.path.exists(META_PATH):
-            index, chunks = load_index(INDEX_PATH, META_PATH)
-        else:
-            return {"answer": "Knowledge base not ingested yet. Call /ingest first."}
+    try:
+        if index is None or chunks is None:
+            if os.path.exists(INDEX_PATH) and os.path.exists(META_PATH):
+                index, chunks = load_index(INDEX_PATH, META_PATH)
+            else:
+                return {"answer": "Knowledge base not ingested yet. Call /ingest first."}
 
-    hits = retrieve(payload.message, index, chunks)
-    answer = generate_answer(payload.message, hits)
-    return {"answer": answer}
+        hits = retrieve(payload.message, index, chunks)
+        answer = generate_answer(payload.message, hits)
+        return {"answer": answer}
+    except OpenAIError as e:
+        raise HTTPException(status_code=500, detail=f"OpenAI API error: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error processing request: {str(e)}")
