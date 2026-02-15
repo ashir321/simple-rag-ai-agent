@@ -162,6 +162,48 @@ This ensures:
 * Domain-specific responses
 * No hallucinations
 
+---
+
+## Vector Database Details
+
+This project uses **FAISS (Facebook AI Similarity Search)** as the vector database for storing and retrieving document embeddings.
+
+### FAISS Configuration
+
+* **Location**: `backend/rag/embed_store.py`
+* **Index Type**: `IndexFlatIP` (Inner Product similarity search)
+* **Storage Files**:
+  * `backend/data/index.faiss` - Vector index file
+  * `backend/data/chunks.json` - Text chunks metadata
+* **Embedding Model**: OpenAI `text-embedding-3-small`
+* **Vector Dimensions**: 1536 (default for text-embedding-3-small)
+
+### How It Works
+
+1. **Ingestion** (`/ingest` endpoint):
+   * PDF is converted to text
+   * Text is chunked into manageable pieces (450 tokens per chunk)
+   * Each chunk is embedded using OpenAI embeddings
+   * Vectors are normalized and stored in FAISS index
+   * Chunks are saved to JSON for retrieval
+
+2. **Query** (`/chat` endpoint):
+   * User question is embedded using the same model
+   * FAISS performs similarity search (k=4 most similar chunks)
+   * Retrieved chunks are sent to GPT-4o-mini for answer generation
+   * Answer is returned to user
+
+### Why FAISS?
+
+* **Fast**: Optimized for similarity search
+* **Lightweight**: No separate database server needed
+* **Open Source**: Free and maintained by Meta AI
+* **CPU-friendly**: Uses `faiss-cpu` package (no GPU required)
+
+For production, consider switching to managed vector databases like Pinecone, Weaviate, or Qdrant for better scalability and features.
+
+---
+
 ## Production Tips
 
 * Store multiple PDFs

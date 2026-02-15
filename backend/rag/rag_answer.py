@@ -3,7 +3,7 @@ from openai import OpenAI
 import faiss
 
 client = OpenAI()
-CHAT_MODEL = "gpt-5.2"
+CHAT_MODEL = "gpt-4o-mini"
 EMBED_MODEL = "text-embedding-3-small"
 
 def embed_query(query: str):
@@ -24,13 +24,21 @@ def retrieve(query, index, chunks, k=4):
 def generate_answer(user_question, retrieved_chunks):
     context = "\n\n".join(retrieved_chunks)
 
-    response = client.responses.create(
+    response = client.chat.completions.create(
         model=CHAT_MODEL,
-        instructions=(
-            "You are an Insurance Agency Customer Care assistant. "
-            "Use only the provided context to answer. "
-            "If not found, say you don't have it and offer human support."
-        ),
-        input=f"Context:\n{context}\n\nQuestion:\n{user_question}"
+        messages=[
+            {
+                "role": "system",
+                "content": (
+                    "You are an Insurance Agency Customer Care assistant. "
+                    "Use only the provided context to answer. "
+                    "If not found, say you don't have it and offer human support."
+                )
+            },
+            {
+                "role": "user",
+                "content": f"Context:\n{context}\n\nQuestion:\n{user_question}"
+            }
+        ]
     )
-    return response.output_text
+    return response.choices[0].message.content
