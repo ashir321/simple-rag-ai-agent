@@ -132,10 +132,12 @@ metadata:
     app: nginx-proxy
 spec:
   type: LoadBalancer
+  externalIPs:
+    - 192.168.1.20
   selector:
     app: nginx-proxy
   ports:
     - name: http
-      port: 80
+      port: 8081
       targetPort: 80
       protocol: TCP
