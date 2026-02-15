@@ -1,7 +1,11 @@
 import React, { useState } from "react";
 
 // Get backend URL from environment variable or use default
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+// Empty string means use relative URLs (for k8s with nginx proxy)
+// If not set, default to localhost for development
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL !== undefined 
+  ? import.meta.env.VITE_BACKEND_URL 
+  : "http://localhost:8000";
 
 export default function ChatWidget() {
   const [msgs, setMsgs] = useState([{ role: "bot", text: "Hi! Ask me about your policy." }]);

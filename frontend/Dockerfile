@@ -12,7 +12,10 @@ RUN npm ci
 # Copy source code
 COPY . .
 
-# Build the application
+# Accept build argument for backend URL
+ARG VITE_BACKEND_URL=""
+
+# Build the application with environment variable
 RUN npm run build
 
 # Production stage

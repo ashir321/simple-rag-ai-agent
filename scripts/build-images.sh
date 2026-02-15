@@ -7,9 +7,10 @@ echo "Building Docker images for RAG AI Agent..."
 echo "Building backend image..."
 docker build -t ashiruddinsk/rag-ai-agent-backend:latest ./backend
 
-# Build frontend image  
+# Build frontend image with empty VITE_BACKEND_URL for k8s deployment
+# This makes the frontend use relative URLs, allowing nginx proxy to route traffic
 echo "Building frontend image..."
-docker build -t ashiruddinsk/rag-ai-agent-frontend:latest ./frontend
+docker build --build-arg VITE_BACKEND_URL="" -t ashiruddinsk/rag-ai-agent-frontend:latest ./frontend
 
 echo "Docker images built successfully!"
 echo ""
