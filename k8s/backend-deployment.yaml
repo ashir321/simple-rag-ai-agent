@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
       - name: backend
-        image: rag-ai-agent-backend:latest
+        image:  ashiruddinsk/rag-ai-agent-backend:latest
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8000
